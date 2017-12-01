@@ -123,9 +123,11 @@ class wechatCallbackapi{
       $keyword = strtolower($keyword);
 
 			foreach($this->data as $d){
+        // skip rules whose trigger type is 'default' and 'subscribe'
 				if($d->trigger=='default' || $d->trigger=='subscribe'){
 					continue;
 				}
+        // post keywords
 				$curr_key=$d->key;
 				foreach($curr_key as $k){
           $_k = strtolower(trim($k));
@@ -140,6 +142,7 @@ class wechatCallbackapi{
 			}
 		}
 		$match = $is_match ? "y" : "n";
+    // nothing found, and iterate again for 'default' rules
 		if(!$is_match){
 			foreach($this->data as $d){
 				if($d->trigger=='default'){
@@ -276,37 +279,11 @@ class wechatCallbackapi{
   	$re_type  = isset($contentData['type']) ?$contentData['type'] :"";
 	  $re_cate  = isset($contentData['cate']) ?$contentData['cate'] :"";
 	  $re_count = isset($contentData['count'])?$contentData['count']:6;
-    $args = array(
-  		'posts_per_page'      => $re_count,
-  		'orderby'             => 'post_date',
-      'order'               => 'desc',
-      'ignore_sticky_posts'	=> 1,
-		);
-    if($re_type!=""){
-      $args['post_type'] = $re_type;
-  		if($re_type=="post" && $re_cate!=""){
-        $args['category'] = $re_cate;
-  		}
-    }else{
-      $args['post_type'] = 'any';
-    }
-    $args['post_status'] = "publish";
 
-    // $args['tag'] = $keyword;
-    // $posts = get_posts($args);
-    //
-    // $more_count = $re_count - count($posts);
-    //
-    // if($more_count <= 0){
-    //   return $posts;
-    // }
-    // unset($array['tag']);
+    // ID, post_content, post_excerpt, post_title
+    // extra: post_type, post_modified
+    $posts = $wpdb->get_results($wpdb -> prepare("select ID,post_content,post_excerpt,post_title,post_type,post_modified from db_wp_posts where post_status = 'publish' order by ((CASE WHEN post_title LIKE '%{$keyword}%' THEN 2 ELSE 0 END) + (CASE WHEN post_content LIKE '%{$keyword}%' THEN 1 ELSE 0 END)) DESC, post_modified DESC, ID ASC limit $re_count"));
 
-    $args['posts_per_page'] = $re_count;
-    $args['s'] = $keyword;
-	  $posts = get_posts($args);
-
-	  // return array_merge($posts, $more_posts);
     return $posts;
   }
 
@@ -500,6 +477,20 @@ class wechatCallbackapi{
 	}
 }
 
+/**
+ * get all auto replay rules
+ * @return [Generator] all rules
+ *   phmsg
+ *   title
+ *   type
+ *   key
+ *   trigger what?
+ *   msg
+ *   remsg
+ *     type
+ *     cate
+ *     count
+ */
 function get_data(){
 	$args = array(
 			'post_type' => 'wpwsl_template',
