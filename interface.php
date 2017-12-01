@@ -276,6 +276,7 @@ class wechatCallbackapi{
 
   private function getSearchPosts($keyword, $contentData = null){
   	if(!$contentData) return null;
+    global $wpdb;
   	$re_type  = isset($contentData['type']) ?$contentData['type'] :"";
 	  $re_cate  = isset($contentData['cate']) ?$contentData['cate'] :"";
 	  $re_count = isset($contentData['count'])?$contentData['count']:6;
