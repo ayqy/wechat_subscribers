@@ -283,7 +283,7 @@ class wechatCallbackapi{
 
     // ID, post_content, post_excerpt, post_title
     // extra: post_type, post_modified
-    $posts = $wpdb->get_results($wpdb -> prepare("select ID,post_content,post_excerpt,post_title,post_type,post_modified from db_wp_posts where post_status = 'publish' order by ((CASE WHEN post_title LIKE '%{$keyword}%' THEN 2 ELSE 0 END) + (CASE WHEN post_content LIKE '%{$keyword}%' THEN 1 ELSE 0 END)) DESC, post_modified DESC, ID ASC limit $re_count"));
+    $posts = $wpdb->get_results($wpdb -> prepare("select ID,post_content,post_excerpt,post_title,post_type,post_modified, ((CASE WHEN post_title LIKE '%{$keyword}%' THEN 2 ELSE 0 END) + (CASE WHEN post_content LIKE '%{$keyword}%' THEN 1 ELSE 0 END)) as weight from db_wp_posts where post_status = 'publish' and post_type != 'wpwsl_template' HAVING weight > 0 order by weight DESC, post_modified DESC, ID ASC limit $re_count"));
 
     return $posts;
   }
