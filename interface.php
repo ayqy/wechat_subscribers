@@ -384,22 +384,11 @@ class wechatCallbackapi{
   }
 
   private function sendMsgBase($fromUsername, $toUsername, $messages){
-    if(count($messages)>0){
-      $headerTpl = "<ToUserName><![CDATA[%s]]></ToUserName>
-      			        <FromUserName><![CDATA[%s]]></FromUserName>
-      			        <CreateTime>%s</CreateTime>
-      			        <MsgType><![CDATA[%s]]></MsgType>
-      			        <ArticleCount>%s</ArticleCount>";
-
-  		$itemTpl = "<item>
-        					<Title><![CDATA[%s]]></Title>
-        					<Description><![CDATA[%s]]></Description>
-        					<PicUrl><![CDATA[%s]]></PicUrl>
-        					<Url><![CDATA[%s]]></Url>
-        					</item>";
+    $counts = count($messages);
+    if($counts>0){
+      $itemTpl = "%s\n%s\n%s\n\n";
 
   		$itemStr="";
-  		$mediaCount=0;
   		$i=1;
   		foreach ($messages as $mediaObject){
   		  $src_and_text = $this->getImgsSrcInPost($mediaObject->ID,
@@ -417,21 +406,26 @@ class wechatCallbackapi{
           $url = html_entity_decode(get_permalink($mediaObject->ID));
         }
 
-  			$itemStr .= sprintf($itemTpl, $title, $des, $media, $url);
-  			$mediaCount++;
+				$itemStr .= sprintf($itemTpl, "[$i/$counts] ".$title, $url, '摘要：'.$des);
   			$i++;
   		}
 
-  		$msgType = "news";
+			$msgType = "text";
   		$time = time();
-  		$headerStr = sprintf($headerTpl,
+
+      $textTpl = "<xml>
+                  <ToUserName><![CDATA[%s]]></ToUserName>
+                  <FromUserName><![CDATA[%s]]></FromUserName>
+                  <CreateTime>%s</CreateTime>
+                  <MsgType><![CDATA[%s]]></MsgType>
+                  <Content><![CDATA[%s]]></Content>
+                  </xml>";
+      $resultStr =sprintf($textTpl,
                            $fromUsername,
                            $toUsername,
                            $time,
                            $msgType,
-                           $mediaCount);
-
-  		$resultStr ="<xml>".$headerStr."<Articles>".$itemStr."</Articles></xml>";
+                           $itemStr);
 
     }else{
       $textTpl = "<xml>
