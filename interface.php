@@ -400,7 +400,7 @@ class wechatCallbackapi{
 
   private function sendMsgBase($fromUsername, $toUsername, $messages){
     $counts = count($messages);
-    if($counts>0){
+    if($counts>1){
       $itemTpl = "%s\n%s\n%s\n\n";
 
   		$itemStr="";
@@ -442,6 +442,49 @@ class wechatCallbackapi{
                            $msgType,
                            $itemStr);
 
+    }else if($counts == 1){
+			$headerTpl = "<ToUserName><![CDATA[%s]]></ToUserName>
+				<FromUserName><![CDATA[%s]]></FromUserName>
+				<CreateTime>%s</CreateTime>
+				<MsgType><![CDATA[%s]]></MsgType>
+				<ArticleCount>%s</ArticleCount>";
+
+			$itemTpl = "<item>
+				<Title><![CDATA[%s]]></Title>
+				<Description><![CDATA[%s]]></Description>
+				<PicUrl><![CDATA[%s]]></PicUrl>
+				<Url><![CDATA[%s]]></Url>
+				</item>";
+
+			$itemStr="";
+			$mediaObject=$messages[0];
+			$src_and_text = $this->getImgsSrcInPost($mediaObject->ID,
+																							$mediaObject->post_content,
+																							$i,
+																							$contentData['type'],
+																							$mediaObject->post_excerpt);
+
+			$title = trim_words($mediaObject->post_title,SYNC_TITLE_LIMIT);
+			$des  = $src_and_text['text'];  // strip_tags or not
+			$media = $this->parseurl($src_and_text['src']);
+			if ($contentData['type']=="attachment"){
+				$url = home_url('/?attachment_id='.$mediaObject->ID);
+			}else{
+				$url = html_entity_decode(get_permalink($mediaObject->ID));
+			}
+
+			$itemStr .= sprintf($itemTpl, $title, $des, $media, $url);
+
+			$msgType = "news";
+			$time = time();
+			$headerStr = sprintf($headerTpl,
+													 $fromUsername,
+													 $toUsername,
+													 $time,
+													 $msgType,
+													 $counts);
+
+			$resultStr ="<xml>".$headerStr."<Articles>".$itemStr."</Articles></xml>";
     }else{
       $textTpl = "<xml>
         					<ToUserName><![CDATA[%s]]></ToUserName>
@@ -463,7 +506,7 @@ class wechatCallbackapi{
                            $no_result);
     }
     return $resultStr;
-  }
+	}
 
 	private function checkSignature(){
 		if(IS_DEBUG){
