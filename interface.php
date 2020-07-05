@@ -274,19 +274,34 @@ class wechatCallbackapi{
 		return $resultStr;
 	}
 
-  private function getSearchPosts($keyword, $contentData = null){
+	private function getSearchPosts($keyword, $contentData = null){
   	if(!$contentData) return null;
-    global $wpdb;
   	$re_type  = isset($contentData['type']) ?$contentData['type'] :"";
-	  $re_cate  = isset($contentData['cate']) ?$contentData['cate'] :"";
-	  $re_count = isset($contentData['count'])?$contentData['count']:6;
+		$re_cate  = isset($contentData['cate']) ?$contentData['cate'] :"";
+		$re_count = isset($contentData['count'])?$contentData['count']:10;
 
-    // ID, post_content, post_excerpt, post_title
-    // extra: post_type, post_modified
-    $posts = $wpdb->get_results($wpdb -> prepare("select ID,post_content,post_excerpt,post_title,post_type,post_modified, ((CASE WHEN post_title LIKE '%{$keyword}%' THEN 2 ELSE 0 END) + (CASE WHEN post_content LIKE '%{$keyword}%' THEN 1 ELSE 0 END)) as weight from db_wp_posts where post_status = 'publish' and post_type != 'wpwsl_template' HAVING weight > 0 order by weight DESC, post_modified DESC, ID ASC limit $re_count"));
+    $args = array(
+			'posts_per_page'      => 10,
+			'orderby'             => 'relevance',
+			'order'               => 'desc',
+			'ignore_sticky_posts'	=> 1,
+		);
+		if($re_type!=""){
+			$args['post_type'] = $re_type;
+			if($re_type=="post" && $re_cate!=""){
+				$args['category'] = $re_cate;
+			}
+    }else{
+      $args['post_type'] = 'any';
+    }
+    $args['post_status'] = "publish";
 
-    return $posts;
-  }
+    $args['posts_per_page'] = $re_count;
+    $args['s'] = $keyword;
+	  $posts = get_posts($args);
+
+		return $posts;
+	}
 
   private function getRandomPosts($contentData = null){
   	if(!$contentData) return null;
